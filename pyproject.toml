@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+git_describe_command = "git describe --dirty --tags --long --match '*[0-9]*' --abbrev=12"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error"
+]
+
+[tool.ruff]
+target-version = "py312"
+exclude = [
+    "build",
+    "dist",
+    ".eggs",
+    ".git",
+    ".tox",
+    "__pycache__",
+]
+
+line-length = 120
+
+
+[tool.ruff.isort]
+known-first-party = ["analysis_engine"]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "internal",
+    "first-party",
+    "local-folder"
+]
+combine-as-imports = true
+
+[tool.ruff.isort.sections]
