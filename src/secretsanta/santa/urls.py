@@ -2,7 +2,7 @@ from django.urls import path
 
 from . import views
 
-app_name = "santa"
+app_name = "secretsanta"
 
 urlpatterns = [
     # Group views

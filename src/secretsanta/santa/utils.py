@@ -14,7 +14,7 @@ def giver_receiver_matching(members: list) -> None:
     shuffled_members = members.copy()
     random.shuffle(shuffled_members)
 
-    while shuffled_members[-1] == members[-1]:
+    if shuffled_members[-1] == members[-1]:
         shuffled_members = shuffled_members[1:] + [shuffled_members[0]]
 
     for giver in members:

@@ -199,12 +199,9 @@ def perform_matching(request, group_id):
     group = get_object_or_404(models.Group, id=group_id)
 
     if group.is_matched:
-        member = models.GroupMember.filter(group=group, user=request.user)
-        message = (
-            f"Matching has already performed for {group.name}. "
-            f"Your match is: {member.recipient.username}"
+        messages.error(
+            request, gettext_lazy(f"Matching has already performed for {group.name}.")
         )
-        messages.error(request, gettext_lazy(message))
         return redirect("santa:group_detail", pk=group_id)
 
     # 1 TODO: Create group admin permission. Enable GroupMember's to be admins
@@ -221,7 +218,7 @@ def perform_matching(request, group_id):
             members = list(group.members.all())
 
             if len(members) < 2:
-                message.error(
+                messages.error(
                     request,
                     gettext_lazy("At least 2 members are required for matching."),
                 )
@@ -229,7 +226,6 @@ def perform_matching(request, group_id):
 
             try:
                 giver_receiver_matching(members=members)
-
                 messages.success(request, gettext_lazy("Matching is complete."))
 
             except Exception:
@@ -250,3 +246,21 @@ def perform_matching(request, group_id):
         "santa/matching_form.html",
         {"form": form, "group": group},
     )
+
+
+@login_required
+def view_my_match(request, group_id):
+    group = get_object_or_404(models.Group, id=group_id)
+    member = get_object_or_404(models.GroupMember, user=request.user, group=group)
+
+    if group.is_matched or member.recipient is None:
+        messages.error(request, gettext_lazy("Matching is not completed yet."))
+        return redirect("santa:group_detail", pk=group_id)
+
+    context = {
+        "group": group,
+        "recipient": member.recipient.user,
+        "recipient_wishlist": member.recipient.wishlist,
+    }
+
+    return render(request, "santa/view_match.html", context)
