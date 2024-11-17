@@ -1,5 +1,3 @@
-import random
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -194,3 +192,61 @@ def leave_group(request, group_id):
         gettext_lazy(f"{member_name} was successfully removed from {group.name}"),
     )
     return redirect("santa:group_list")
+
+
+@login_required
+def perform_matching(request, group_id):
+    group = get_object_or_404(models.Group, id=group_id)
+
+    if group.is_matched:
+        member = models.GroupMember.filter(group=group, user=request.user)
+        message = (
+            f"Matching has already performed for {group.name}. "
+            f"Your match is: {member.recipient.username}"
+        )
+        messages.error(request, gettext_lazy(message))
+        return redirect("santa:group_detail", pk=group_id)
+
+    # 1 TODO: Create group admin permission. Enable GroupMember's to be admins
+    # and be able to perform matching.
+    if group.created_by != request.user:
+        messages.error(
+            request, gettext_lazy("Only the group creator can perform matching.")
+        )
+        return redirect("santa:group_detail", pk=group_id)
+
+    if request.method == "POST":
+        form = forms.MatchingForm(request.POST)
+        if form.is_valid():
+            members = list(group.members.all())
+
+            if len(members) < 2:
+                message.error(
+                    request,
+                    gettext_lazy("At least 2 members are required for matching."),
+                )
+                return redirect("santa:group_detail", pk=group_id)
+
+            try:
+                giver_receiver_matching(members=members)
+
+                messages.success(request, gettext_lazy("Matching is complete."))
+
+            except Exception:
+                messages.error(
+                    request,
+                    gettext_lazy(
+                        "An error occurred during matching. Please try again."
+                    ),
+                )
+                return redirect("santa:group_detail", pk=group_id)
+
+            return redirect("santa:group_detail", pk=group_id)
+    else:
+        form = forms.MatchingForm()
+
+    return render(
+        request,
+        "santa/matching_form.html",
+        {"form": form, "group": group},
+    )
